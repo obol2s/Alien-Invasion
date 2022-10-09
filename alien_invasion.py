@@ -2,6 +2,7 @@ import sys
 
 import pygame
 
+from alien import Alien
 from bullet import Bullet
 from settings import Settings
 from ship import Ship
@@ -20,7 +21,7 @@ class AlienInvasion:
         pygame.display.set_caption('Alien Invasion')
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
-
+        self.aliens = pygame.sprite.Group()
 
     def run_game(self):
         """Запуск основного цикла игры."""
@@ -31,6 +32,7 @@ class AlienInvasion:
             self._update_screen()
             self.ship.update()
             self._update_bullets()
+            self._create_fleet()
 
     def _check_events(self):
         """Обрабатывает нажатие клавиш и события мыши. """
@@ -75,6 +77,36 @@ class AlienInvasion:
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
 
+    def _create_fleet(self):
+        """Создание флота вторжения."""
+        # Создание пришельца и вычисление количества пришельцев в ряду.
+        # Интервал между соседними пришельцами равен ширине пришельца.
+        alien = Alien(self)
+        alien_width, alien_height = alien.rect.size
+        self.aliens.add(alien)
+        alien_width = alien.rect.width
+        available_spase_x = self.settings.screen_width - (2 * alien_width)
+        number_alien_x = available_spase_x // (2 * alien_width)
+
+        """ Определяет количество рядов, помещающихся на экране"""
+        ship_height = self.ship.rect.height
+        available_spase_y = (self.settings.screen_height -
+                             (3 * alien_height) - ship_height)
+        numbers_rows = available_spase_y // (2 * alien_height)
+
+        # Создание флота вторжения.
+        for row_number in range(numbers_rows):
+            for alien_number in range(number_alien_x):
+                self._create_alien(alien_number, row_number)
+
+    def _create_alien(self, alien_number, row_number):
+        # Создание пришельца и размещение его в ряду.
+        alien = Alien(self)
+        alien_width, alien_height = alien.rect.size
+        alien.x = alien_width + 2 * alien_width * alien_number
+        alien.rect.x = alien.x
+        alien.rect.y = alien.rect.height + 2 * alien.rect.height * row_number
+        self.aliens.add(alien)
 
     def _update_screen(self):
         """Обновляет изображения на экране и отображает новый экран."""
@@ -82,6 +114,7 @@ class AlienInvasion:
         self.ship.blitme()
         for bullet in self.bullets:
             bullet.draw_bullet()
+        self.aliens.draw(self.screen)
 
         # Отображение последнего прорисованного экрана.
         pygame.display.flip()
